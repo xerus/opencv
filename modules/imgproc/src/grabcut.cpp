@@ -361,7 +361,8 @@ static void initMaskWithRect( Mat& mask, Size imgSize, Rect rect )
 /*
   Initialize GMM background and foreground models using kmeans algorithm.
 */
-static void initGMMs( const Mat& img, const Mat& mask, GMM& bgdGMM, GMM& fgdGMM )
+static void initGMMs( const Mat& img, const Mat& mask, GMM& bgdGMM, GMM& fgdGMM,
+                      const int gmmCreate = GMM_DEFAULT )
 {
     const int kMeansItCount = 10;
     const int kMeansType = KMEANS_PP_CENTERS;
@@ -373,10 +374,33 @@ static void initGMMs( const Mat& img, const Mat& mask, GMM& bgdGMM, GMM& fgdGMM 
     {
         for( p.x = 0; p.x < img.cols; p.x++ )
         {
-            if( mask.at<uchar>(p) == GC_BGD || mask.at<uchar>(p) == GC_PR_BGD )
-                bgdSamples.push_back( (Vec3f)img.at<Vec3b>(p) );
-            else // GC_FGD | GC_PR_FGD
-                fgdSamples.push_back( (Vec3f)img.at<Vec3b>(p) );
+            switch(gmmCreate)
+            {
+            case GMM_DEFAULT:
+                if( mask.at<uchar>(p) == GC_BGD || mask.at<uchar>(p) == GC_PR_BGD )
+                    bgdSamples.push_back( (Vec3f)img.at<Vec3b>(p) );
+                else
+                    fgdSamples.push_back( (Vec3f)img.at<Vec3b>(p) );
+                break;
+            case GMM_FGD_BGD:
+                if( mask.at<uchar>(p) == GC_BGD )
+                    bgdSamples.push_back( (Vec3f)img.at<Vec3b>(p) );
+                else if ( mask.at<uchar>(p) == GC_FGD )
+                    fgdSamples.push_back( (Vec3f)img.at<Vec3b>(p) );
+                break;
+            case GMM_FGDPR_BGD:
+                if( mask.at<uchar>(p) == GC_BGD )
+                    bgdSamples.push_back( (Vec3f)img.at<Vec3b>(p) );
+                else if ( mask.at<uchar>(p) == GC_FGD || mask.at<uchar>(p) == GC_PR_FGD)
+                    fgdSamples.push_back( (Vec3f)img.at<Vec3b>(p) );
+                break;
+            case GMM_FGD_BGDPR:
+                if( mask.at<uchar>(p) == GC_BGD || mask.at<uchar>(p) == GC_PR_BGD )
+                    bgdSamples.push_back( (Vec3f)img.at<Vec3b>(p) );
+                else if ( mask.at<uchar>(p) == GC_FGD )
+                    fgdSamples.push_back( (Vec3f)img.at<Vec3b>(p) );
+                break;
+            }
         }
     }
     CV_Assert( !bgdSamples.empty() && !fgdSamples.empty() );
@@ -448,7 +472,9 @@ static void learnGMMs( const Mat& img, const Mat& mask, const Mat& compIdxs, GMM
 */
 static void constructGCGraph( const Mat& img, const Mat& mask, const GMM& bgdGMM, const GMM& fgdGMM, double lambda,
                        const Mat& leftW, const Mat& upleftW, const Mat& upW, const Mat& uprightW,
-                       GCGraph<double>& graph )
+                       GCGraph<double>& graph,
+                       const Mat probMask=Mat(),
+                       const int probMaskCombine=PMC_DEFAULT )
 {
     int vtxCount = img.cols*img.rows,
         edgeCount = 2*(4*img.cols*img.rows - 3*(img.cols + img.rows) + 2);
@@ -461,13 +487,27 @@ static void constructGCGraph( const Mat& img, const Mat& mask, const GMM& bgdGMM
             // add node
             int vtxIdx = graph.addVtx();
             Vec3b color = img.at<Vec3b>(p);
+            double prob = (probMaskCombine != PMC_DEFAULT) ? probMask.at<unsigned char>(p)/255. : 0;
 
             // set t-weights
             double fromSource, toSink;
             if( mask.at<uchar>(p) == GC_PR_BGD || mask.at<uchar>(p) == GC_PR_FGD )
             {
-                fromSource = -log( bgdGMM(color) );
-                toSink = -log( fgdGMM(color) );
+                switch(probMaskCombine)
+                {
+                case PMC_MULTIPLY:
+                    fromSource = -log( bgdGMM(color)*(1.-prob) );
+                    toSink = -log( fgdGMM(color)*prob );
+                    break;
+                case PMC_BAYESS:
+                    fromSource = -log(bgdGMM(color)*(1.-prob)/(fgdGMM(color)*prob+bgdGMM(color)*(1.-prob))/1000.);
+                    toSink     = -log(fgdGMM(color)*prob     /(fgdGMM(color)*prob+bgdGMM(color)*(1.-prob))/1000.);
+                    break;
+                default: // PMC_DEFAULT, PMC_ADD
+                    fromSource = -log( bgdGMM(color) );
+                    toSink = -log( fgdGMM(color) );
+                    break;
+                }
             }
             else if( mask.at<uchar>(p) == GC_BGD )
             {
@@ -480,6 +520,10 @@ static void constructGCGraph( const Mat& img, const Mat& mask, const GMM& bgdGMM
                 toSink = 0;
             }
             graph.addTermWeights( vtxIdx, fromSource, toSink );
+            if(probMaskCombine == PMC_ADD)
+            {
+                graph.addTermWeights( vtxIdx, -log(1.-prob), -log(prob) );
+            }
 
             // set n-weights
             if( p.x>0 )
@@ -530,7 +574,9 @@ static void estimateSegmentation( GCGraph<double>& graph, Mat& mask )
 
 void cv::grabCut( InputArray _img, InputOutputArray _mask, Rect rect,
                   InputOutputArray _bgdModel, InputOutputArray _fgdModel,
-                  int iterCount, int mode )
+                  int iterCount, int mode,
+                  const Mat probMask,
+                  const int gmmCreate, const int probMaskCombine  )
 {
     CV_INSTRUMENT_REGION();
 
@@ -553,7 +599,7 @@ void cv::grabCut( InputArray _img, InputOutputArray _mask, Rect rect,
             initMaskWithRect( mask, img.size(), rect );
         else // flag == GC_INIT_WITH_MASK
             checkMask( img, mask );
-        initGMMs( img, mask, bgdGMM, fgdGMM );
+        initGMMs( img, mask, bgdGMM, fgdGMM, gmmCreate );
     }
 
     if( iterCount <= 0)
@@ -578,7 +624,8 @@ void cv::grabCut( InputArray _img, InputOutputArray _mask, Rect rect,
         assignGMMsComponents( img, mask, bgdGMM, fgdGMM, compIdxs );
         if( mode != GC_EVAL_FREEZE_MODEL )
             learnGMMs( img, mask, compIdxs, bgdGMM, fgdGMM );
-        constructGCGraph(img, mask, bgdGMM, fgdGMM, lambda, leftW, upleftW, upW, uprightW, graph );
+        constructGCGraph(img, mask, bgdGMM, fgdGMM, lambda, leftW, upleftW,
+                         upW, uprightW, graph, probMask, probMaskCombine );
         estimateSegmentation( graph, mask );
     }
 }

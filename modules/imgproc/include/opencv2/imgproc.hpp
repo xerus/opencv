@@ -360,6 +360,20 @@ enum GrabCutModes {
     GC_EVAL_FREEZE_MODEL = 3
 };
 
+enum{
+    GMM_DEFAULT = 0,    // FGD|PR_FGD;BGD|PR_BGD (default)
+    GMM_FGD_BGD = 1,    // FGD;BGD
+    GMM_FGDPR_BGD = 2,  // FGD|PR_FGD;BGD
+    GMM_FGD_BGDPR = 3   // FGD|PR_FGD;BGD
+};
+
+enum{
+    PMC_DEFAULT = 0,    // default = add(GMM)
+    PMC_MULTIPLY = 1,   // multiply = add(GMM*prob)
+    PMC_BAYESS = 2,     // add(Bayess GMM and prob)
+    PMC_ADD = 3         // add(default) + add(prob)
+};
+
 //! distanceTransform algorithm flags
 enum DistanceTransformLabelTypes {
     /** each connected component of zeros in src (as well as all the non-zero pixels closest to the
@@ -3307,7 +3321,10 @@ mode==GC_EVAL .
  */
 CV_EXPORTS_W void grabCut( InputArray img, InputOutputArray mask, Rect rect,
                            InputOutputArray bgdModel, InputOutputArray fgdModel,
-                           int iterCount, int mode = GC_EVAL );
+                           int iterCount, int mode = GC_EVAL,
+                           const Mat probMask = Mat(),
+                           const int gmmCreate = GMM_DEFAULT,
+                           const int probMaskCombine = PMC_DEFAULT );
 
 /** @example samples/cpp/distrans.cpp
 An example on using the distance transform
