@@ -109,6 +109,24 @@ public:
                           Size maxSize = Size(),
                           bool outputRejectLevels = false ) CV_OVERRIDE;
 
+    void detectMultiScale( const Mat &image,
+                          CV_OUT std::vector<Rect>& objects,
+                          CV_OUT std::vector<int>& rejectLevels,
+                          CV_OUT std::vector<double>& levelWeights,
+                          double scaleFactor,
+                          int minNeighbors,
+                          Size minSize,
+                          Size maxSize,
+                          int evalLastStagesCount,
+                          int stepSize,
+                          int adaStepThold,
+                          int adaStepNeighborCount ) CV_OVERRIDE;
+
+    bool detectSingleScale( const Mat& image, int stripCount, Size processingRectSize,
+                            int stripSize, int yStep, double factor, std::vector<Rect>& candidates,
+                            std::vector<int>& levels, std::vector<double>& weights,
+                            bool outputRejectLevels, int intevalLastStagesCount,
+                            int adaStepThold, int adaStepNeighborCount) CV_OVERRIDE;
 
     bool isOldFormatCascade() const CV_OVERRIDE;
     Size getOriginalWindowSize() const CV_OVERRIDE;
@@ -121,10 +139,6 @@ public:
 protected:
     enum { SUM_ALIGN = 64 };
 
-    bool detectSingleScale( InputArray image, Size processingRectSize,
-                            int yStep, double factor, std::vector<Rect>& candidates,
-                            std::vector<int>& rejectLevels, std::vector<double>& levelWeights,
-                            Size sumSize0, bool outputRejectLevels = false );
 #ifdef HAVE_OPENCL
     bool ocl_detectMultiScaleNoGrouping( const std::vector<float>& scales,
                                          std::vector<Rect>& candidates );
@@ -133,6 +147,13 @@ protected:
                                     std::vector<int>& rejectLevels, std::vector<double>& levelWeights,
                                     double scaleFactor, Size minObjectSize, Size maxObjectSize,
                                     bool outputRejectLevels = false );
+    void detectMultiScaleNoGrouping( InputArray image, std::vector<Rect>& candidates,
+                                    std::vector<int>& rejectLevels, std::vector<double>& levelWeights,
+                                    double scaleFactor, Size minObjectSize, Size maxObjectSize,
+                                    int evalLastStagesCount,
+                                    int stepSize,
+                                    int adaStepThold,
+                                    int adaStepNeighborCount );
 
     enum { MAX_FACES = 10000 };
     enum { BOOST = 0 };
@@ -143,6 +164,8 @@ protected:
     };
 
     friend class CascadeClassifierInvoker;
+    friend class CascadeClassifierInvoker2;
+    friend class CascadeClassifierInnoInvoker;
     friend class SparseCascadeClassifierInvoker;
 
     template<class FEval>
@@ -158,6 +181,7 @@ protected:
     friend int predictCategoricalStump( CascadeClassifierImpl& cascade, Ptr<FeatureEvaluator> &featureEvaluator, double& weight);
 
     int runAt( Ptr<FeatureEvaluator>& feval, Point pt, int scaleIdx, double& weight );
+    int runAt( Ptr<FeatureEvaluator>& feval, Point pt, double& weight );
 
     class Data
     {

@@ -154,10 +154,15 @@ CV_EXPORTS_W void groupRectangles(CV_IN_OUT std::vector<Rect>& rectList, CV_OUT 
                                   int groupThreshold, double eps = 0.2);
 /** @overload */
 CV_EXPORTS   void groupRectangles(std::vector<Rect>& rectList, int groupThreshold,
-                                  double eps, std::vector<int>* weights, std::vector<double>* levelWeights );
+                                  double eps, std::vector<int>* weights, std::vector<double>* levelWeights,
+                                  int& partitionCount );
 /** @overload */
 CV_EXPORTS   void groupRectangles(std::vector<Rect>& rectList, std::vector<int>& rejectLevels,
                                   std::vector<double>& levelWeights, int groupThreshold, double eps = 0.2);
+/** @overload */
+CV_EXPORTS   void groupRectangles(std::vector<Rect>& rectList, std::vector<int>& rejectLevels,
+                                  std::vector<double>& levelWeights, int groupThreshold, int& partitionCount,
+                                  double eps = 0.2);
 /** @overload */
 CV_EXPORTS   void groupRectangles_meanshift(std::vector<Rect>& rectList, std::vector<double>& foundWeights,
                                             std::vector<double>& foundScales,
@@ -198,6 +203,24 @@ public:
                                    int minNeighbors, int flags,
                                    Size minSize, Size maxSize,
                                    bool outputRejectLevels ) = 0;
+
+    virtual void detectMultiScale( const Mat &image,
+                                   CV_OUT std::vector<Rect>& objects,
+                                   CV_OUT std::vector<int>& rejectLevels,
+                                   CV_OUT std::vector<double>& levelWeights,
+                                   double scaleFactor,
+                                   int minNeighbors,
+                                   Size minSize,
+                                   Size maxSize,
+                                   int evalLastStagesCount,
+                                   int stepSize,
+                                   int adaStepThold,
+                                   int adaStepNeighborCount ) = 0;
+    virtual bool detectSingleScale( const Mat& image, int stripCount, Size processingRectSize,
+                          int stripSize, int yStep, double factor, std::vector<Rect>& candidates,
+                          std::vector<int>& levels, std::vector<double>& weights,
+                          bool outputRejectLevels, int intevalLastStagesCount,
+                          int adaStepThold, int adaStepNeighborCount) = 0;
 
     virtual bool isOldFormatCascade() const = 0;
     virtual Size getOriginalWindowSize() const = 0;
@@ -323,6 +346,29 @@ public:
                                   Size minSize = Size(),
                                   Size maxSize = Size(),
                                   bool outputRejectLevels = false );
+
+    CV_WRAP_AS(detectMultiScaleInno) void detectMultiScale( const Mat &image,
+                          CV_OUT std::vector<Rect>& objects,
+                          CV_OUT std::vector<int>& rejectLevels,
+                          CV_OUT std::vector<double>& levelWeights,
+                          double scaleFactor,
+                          int minNeighbors,
+                          Size minSize, Size maxSize,
+                          int evalLastStagesCount,
+                          int stepSize,
+                          int adaStepThold,
+                          int adaStepNeighborCount );
+
+    CV_WRAP_AS(detectSingleScaleInno) bool detectSingleScale( const Mat& image, int stripCount, Size processingRectSize,
+                          int stripSize, int yStep, double factor, std::vector<Rect>& candidates,
+                          std::vector<int>& levels, std::vector<double>& weights,
+                          bool outputRejectLevels, int intevalLastStagesCount,
+                          int adaStepThold, int adaStepNeighborCount);
+
+    CV_WRAP_AS(detectSingleScaleInno2) bool detectSingleScale( const Mat& image, int stripCount, Size processingRectSize,
+                          int stripSize, int yStep, double factor, std::vector<Rect>& candidates,
+                          std::vector<int>& levels, std::vector<double>& weights,
+                          int adaStepThold, int adaStepNeighborCount);
 
     CV_WRAP bool isOldFormatCascade() const;
     CV_WRAP Size getOriginalWindowSize() const;

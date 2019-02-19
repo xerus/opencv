@@ -56,14 +56,14 @@ template<typename _Tp> void copyVectorToUMat(const std::vector<_Tp>& v, UMat& um
     Mat(1, (int)(v.size()*sizeof(v[0])), CV_8U, (void*)&v[0]).copyTo(um);
 }
 
-void groupRectangles(std::vector<Rect>& rectList, int groupThreshold, double eps,
-                     std::vector<int>* weights, std::vector<double>* levelWeights)
+static void groupRectangles(std::vector<Rect>& rectList, int groupThreshold, double eps,
+                            std::vector<int>* weights, std::vector<double>* levelWeights)
 {
     CV_INSTRUMENT_REGION();
 
-    if( groupThreshold <= 0 || rectList.empty() )
+    if ( groupThreshold <= 0 || rectList.empty() )
     {
-        if( weights && !levelWeights )
+        if ( weights && !levelWeights )
         {
             size_t i, sz = rectList.size();
             weights->resize(sz);
@@ -98,12 +98,12 @@ void groupRectangles(std::vector<Rect>& rectList, int groupThreshold, double eps
         for( i = 0; i < nlabels; i++ )
         {
             int cls = labels[i];
-            if( (*weights)[i] > rejectLevels[cls] )
+            if ( (*weights)[i] > rejectLevels[cls] )
             {
                 rejectLevels[cls] = (*weights)[i];
                 rejectWeights[cls] = (*levelWeights)[i];
             }
-            else if( ( (*weights)[i] == rejectLevels[cls] ) && ( (*levelWeights)[i] > rejectWeights[cls] ) )
+            else if ( ( (*weights)[i] == rejectLevels[cls] ) && ( (*levelWeights)[i] > rejectWeights[cls] ) )
                 rejectWeights[cls] = (*levelWeights)[i];
         }
     }
@@ -121,9 +121,9 @@ void groupRectangles(std::vector<Rect>& rectList, int groupThreshold, double eps
     }
 
     rectList.clear();
-    if( weights )
+    if ( weights )
         weights->clear();
-    if( levelWeights )
+    if ( levelWeights )
         levelWeights->clear();
 
     for( i = 0; i < nclasses; i++ )
@@ -134,21 +134,21 @@ void groupRectangles(std::vector<Rect>& rectList, int groupThreshold, double eps
         int l1 = rejectLevels[i];
 
         // filter out rectangles which don't have enough similar rectangles
-        if( n1 <= groupThreshold )
+        if ( n1 <= groupThreshold )
             continue;
         // filter out small face rectangles inside large rectangles
         for( j = 0; j < nclasses; j++ )
         {
             int n2 = rweights[j];
 
-            if( j == i || n2 <= groupThreshold )
+            if ( j == i || n2 <= groupThreshold )
                 continue;
             Rect r2 = rrects[j];
 
             int dx = saturate_cast<int>( r2.width * eps );
             int dy = saturate_cast<int>( r2.height * eps );
 
-            if( i != j &&
+            if ( i != j &&
                 r1.x >= r2.x - dx &&
                 r1.y >= r2.y - dy &&
                 r1.x + r1.width <= r2.x + r2.width + dx &&
@@ -157,12 +157,12 @@ void groupRectangles(std::vector<Rect>& rectList, int groupThreshold, double eps
                 break;
         }
 
-        if( j == nclasses )
+        if ( j == nclasses )
         {
             rectList.push_back(r1);
-            if( weights )
+            if ( weights )
                 weights->push_back(useDefaultWeights ? n1 : l1);
-            if( levelWeights )
+            if ( levelWeights )
                 levelWeights->push_back(w1);
         }
     }
@@ -433,7 +433,7 @@ int FeatureEvaluator::calcCat(int) const { return 0; }
 
 bool FeatureEvaluator::updateScaleData( Size imgsz, const std::vector<float>& _scales )
 {
-    if( scaleData.empty() )
+    if ( scaleData.empty() )
         scaleData = makePtr<std::vector<ScaleData> >();
 
     size_t i, nscales = _scales.size();
@@ -449,7 +449,7 @@ bool FeatureEvaluator::updateScaleData( Size imgsz, const std::vector<float>& _s
     for( i = 0; i < nscales; i++ )
     {
         FeatureEvaluator::ScaleData& s = scaleData->at(i);
-        if( !recalcOptFeatures && fabs(s.scale - _scales[i]) > FLT_EPSILON*100*_scales[i] )
+        if ( !recalcOptFeatures && fabs(s.scale - _scales[i]) > FLT_EPSILON*100*_scales[i] )
             recalcOptFeatures = true;
         float sc = _scales[i];
         Size sz;
@@ -459,12 +459,12 @@ bool FeatureEvaluator::updateScaleData( Size imgsz, const std::vector<float>& _s
         s.scale = sc;
         s.szi = Size(sz.width+1, sz.height+1);
 
-        if( i == 0 )
+        if ( i == 0 )
         {
             layer_dy = s.szi.height;
         }
 
-        if( layer_ofs.x + s.szi.width > sbufSize.width )
+        if ( layer_ofs.x + s.szi.width > sbufSize.width )
         {
             layer_ofs = Point(0, layer_ofs.y + layer_dy);
             layer_dy = s.szi.height;
@@ -599,7 +599,7 @@ bool HaarEvaluator::read(const FileNode& node, Size _origWinSize)
     {
         if(!ff[i].read(*it))
             return false;
-        if( ff[i].tilted )
+        if ( ff[i].tilted )
             hasTiltedFeatures = true;
     }
     nchannels = hasTiltedFeatures ? 3 : 2;
@@ -701,7 +701,7 @@ bool HaarEvaluator::setWindow( Point pt, int scaleIdx )
 {
     const ScaleData& s = getScaleData(scaleIdx);
 
-    if( pt.x < 0 || pt.y < 0 ||
+    if ( pt.x < 0 || pt.y < 0 ||
         pt.x + origWinSize.width >= s.szi.width ||
         pt.y + origWinSize.height >= s.szi.height )
         return false;
@@ -713,7 +713,7 @@ bool HaarEvaluator::setWindow( Point pt, int scaleIdx )
 
     double area = normrect.area();
     double nf = area * valsqsum - (double)valsum * valsum;
-    if( nf > 0. )
+    if ( nf > 0. )
     {
         nf = std::sqrt(nf);
         varianceNormFactor = (float)(1./nf);
@@ -733,7 +733,7 @@ void HaarEvaluator::OptFeature::setOffsets( const Feature& _f, int step, int _to
     weight[1] = _f.rect[1].weight;
     weight[2] = _f.rect[2].weight;
 
-    if( _f.tilted )
+    if ( _f.tilted )
     {
         CV_TILTED_OFS( ofs[0][0], ofs[0][1], ofs[0][2], ofs[0][3], _tofs, _f.rect[0].r, step );
         CV_TILTED_OFS( ofs[1][0], ofs[1][1], ofs[1][2], ofs[1][3], _tofs, _f.rect[1].r, step );
@@ -867,7 +867,7 @@ bool LBPEvaluator::setWindow( Point pt, int scaleIdx )
     CV_Assert(0 <= scaleIdx && scaleIdx < (int)scaleData->size());
     const ScaleData& s = scaleData->at(scaleIdx);
 
-    if( pt.x < 0 || pt.y < 0 ||
+    if ( pt.x < 0 || pt.y < 0 ||
         pt.x + origWinSize.width >= s.szi.width ||
         pt.y + origWinSize.height >= s.szi.height )
         return false;
@@ -909,12 +909,12 @@ bool CascadeClassifierImpl::load(const String& filename)
     featureEvaluator.release();
 
     FileStorage fs(filename, FileStorage::READ);
-    if( !fs.isOpened() )
+    if ( !fs.isOpened() )
         return false;
 
     FileNode fs_root = fs.getFirstTopLevelNode();
 
-    if( read_(fs_root) )
+    if ( read_(fs_root) )
         return true;
 
     // probably, it's the cascade in the old format;
@@ -925,7 +925,7 @@ bool CascadeClassifierImpl::load(const String& filename)
     newfs.open(newfs_content, FileStorage::READ+FileStorage::MEMORY);
     fs_root = newfs.getFirstTopLevelNode();
 
-    if( read_(fs_root) )
+    if ( read_(fs_root) )
         return true;
 
     return false;
@@ -945,32 +945,38 @@ int CascadeClassifierImpl::runAt( Ptr<FeatureEvaluator>& evaluator, Point pt, in
             data.featureType == FeatureEvaluator::LBP ||
             data.featureType == FeatureEvaluator::HOG) );
 
-    if( !evaluator->setWindow(pt, scaleIdx) )
+    if ( !evaluator->setWindow(pt, scaleIdx) )
         return -1;
-    if( data.maxNodesPerTree == 1 )
+    if ( data.maxNodesPerTree == 1 )
     {
-        if( data.featureType == FeatureEvaluator::HAAR )
+        if ( data.featureType == FeatureEvaluator::HAAR )
             return predictOrderedStump<HaarEvaluator>( *this, evaluator, weight );
-        else if( data.featureType == FeatureEvaluator::LBP )
+        else if ( data.featureType == FeatureEvaluator::LBP )
             return predictCategoricalStump<LBPEvaluator>( *this, evaluator, weight );
         else
             return -2;
     }
     else
     {
-        if( data.featureType == FeatureEvaluator::HAAR )
+        if ( data.featureType == FeatureEvaluator::HAAR )
             return predictOrdered<HaarEvaluator>( *this, evaluator, weight );
-        else if( data.featureType == FeatureEvaluator::LBP )
+        else if ( data.featureType == FeatureEvaluator::LBP )
             return predictCategorical<LBPEvaluator>( *this, evaluator, weight );
         else
             return -2;
     }
 }
 
+int CascadeClassifierImpl::runAt( Ptr<FeatureEvaluator>& evaluator, Point pt, double& weight )
+{
+    return runAt(evaluator, pt, 0, weight);
+}
+
 void CascadeClassifierImpl::setMaskGenerator(const Ptr<MaskGenerator>& _maskGenerator)
 {
     maskGenerator=_maskGenerator;
 }
+
 Ptr<CascadeClassifierImpl::MaskGenerator> CascadeClassifierImpl::getMaskGenerator()
 {
     return maskGenerator;
@@ -981,6 +987,7 @@ Ptr<BaseCascadeClassifier::MaskGenerator> createFaceDetectionMaskGenerator()
     return Ptr<BaseCascadeClassifier::MaskGenerator>();
 }
 
+// FIXME: Factor our common code of Invokers
 class CascadeClassifierInvoker : public ParallelLoopBody
 {
 public:
@@ -1027,11 +1034,11 @@ public:
                 for( int x = 0; x < szw.width; x += yStep )
                 {
                     int result = classifier->runAt(evaluator, Point(x, y), scaleIdx, gypWeight);
-                    if( rejectLevels )
+                    if ( rejectLevels )
                     {
-                        if( result == 1 )
+                        if ( result == 1 )
                             result = -(int)classifier->data.stages.size();
-                        if( classifier->data.stages.size() + result == 0 )
+                        if ( classifier->data.stages.size() + result == 0 )
                         {
                             mtx->lock();
                             rectangles->push_back(Rect(cvRound(x*scalingFactor),
@@ -1042,7 +1049,7 @@ public:
                             mtx->unlock();
                         }
                     }
-                    else if( result > 0 )
+                    else if ( result > 0 )
                     {
                         mtx->lock();
                         rectangles->push_back(Rect(cvRound(x*scalingFactor),
@@ -1050,7 +1057,7 @@ public:
                                                    winSize.width, winSize.height));
                         mtx->unlock();
                     }
-                    if( result == 0 )
+                    if ( result == 0 )
                         x += yStep;
                 }
             }
@@ -1069,6 +1076,543 @@ public:
     Mutex* mtx;
 };
 
+class CascadeClassifierInnoInvoker : public ParallelLoopBody
+{
+public:
+    CascadeClassifierInnoInvoker( CascadeClassifierImpl& _cc, Size _sz1, int _stripSize, int _yStep, double _factor,
+        std::vector<Rect>& _vec, std::vector<int>& _levels, std::vector<double>& _weights, bool outputLevels,
+        const Mat& _mask, Mutex* _mtx,
+        int _intervalLastStagesCount, int _adaStepThold, int _adaStepNeighborCount)
+    {
+        classifier = &_cc;
+        processingRectSize = _sz1;
+        stripSize = _stripSize;
+        yStep = _yStep;
+        scalingFactor = _factor;
+        rectangles = &_vec;
+        rejectLevels = outputLevels ? &_levels : 0;
+        levelWeights = outputLevels ? &_weights : 0;
+        mask = _mask;
+        mtx = _mtx;
+        intervalLastStagesCount = _intervalLastStagesCount;
+        adaStepThold = _adaStepThold;
+        adaStepNeighborCount = _adaStepNeighborCount;
+    }
+
+    void operator()(const Range& range) const CV_OVERRIDE
+    {
+        Ptr<FeatureEvaluator> evaluator = classifier->featureEvaluator->clone();
+
+        Size winSize(cvRound(classifier->data.origWinSize.width * scalingFactor),
+                     cvRound(classifier->data.origWinSize.height * scalingFactor));
+        int y1 = range.start * stripSize;
+        int y2 = min(range.end * stripSize, processingRectSize.height);
+
+        if (y1 >= y2)
+            return;
+
+        int levelsMapRows = 1 + (y2 - y1 - 1) / yStep;
+        int levelsMapCols = 1 + (processingRectSize.width - 1) / yStep;
+
+        Mat levelsMapMat(levelsMapRows, levelsMapCols, CV_8S, cv::Scalar(-1));
+        signed char* levelsMap = (signed char*)(levelsMapMat.data);
+
+        for( int y = y1, row = 0; y < y2; y += yStep, row++ )
+        {
+            int rowOffset = levelsMapMat.step * row;
+            int prevRowOffset = levelsMapMat.step * (row-1);
+
+            for( int x = 0, col = 0; x < processingRectSize.width; x += yStep, col++ )
+            {
+                if ( (!mask.empty()) && (mask.at<uchar>(Point(x, y)) == 0))
+                {
+                    levelsMap[rowOffset + col] = -1;
+                    continue;
+                }
+
+                switch(adaStepNeighborCount)
+                {
+                    case 1:
+                        if (col > 0)
+                        {
+                            int sumKnown = 0;
+                            int sumLevels = 0;
+
+                            if(levelsMap[rowOffset + col - 1] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[rowOffset + col - 1];
+                            }
+
+                            if (sumKnown > 0 && (float(sumLevels) < float(adaStepThold)))
+                            {
+                                levelsMap[rowOffset + col] = -1;
+                                continue;
+                            }
+                        }
+                        break;
+                    case 2:
+                        if (row > 0 && col > 0)
+                        {
+                            int sumKnown = 0;
+                            int sumLevels = 0;
+
+                            if(levelsMap[prevRowOffset + col] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[prevRowOffset + col];
+                            }
+                            if(levelsMap[rowOffset + col - 1] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[rowOffset + col - 1];
+                            }
+
+                            if (sumKnown >= 1 && (float(sumLevels)/sumKnown) < float(adaStepThold))
+                            {
+                                levelsMap[rowOffset + col] = -1;
+                                continue;
+                            }
+                        }
+                        break;
+                    case 4:
+                        if (row > 0 && col > 0 && col + 1 < levelsMapMat.cols)
+                        {
+                            int sumKnown = 0;
+                            int sumLevels = 0;
+
+                            if(levelsMap[prevRowOffset + col - 1] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[prevRowOffset + col - 1];
+                            }
+                            if(levelsMap[prevRowOffset + col] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[prevRowOffset + col];
+                            }
+                            if(levelsMap[prevRowOffset + col + 1] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[prevRowOffset + col + 1];
+                            }
+                            if(levelsMap[rowOffset + col - 1] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[rowOffset + col - 1];
+                            }
+
+                            if (sumKnown >= 2 && (float(sumLevels)/sumKnown) < float(adaStepThold))
+                            {
+                                levelsMap[rowOffset + col] = -1;
+                                continue;
+                            }
+                        }
+                        break;
+                    case 10:
+                        if (row > 1 && col > 1 && col + 1 < levelsMapMat.cols)
+                        {
+                            int sumKnown = 0;
+                            int sumLevels = 0;
+                            int prevPrevRowOffset = levelsMapMat.step * (row-2);
+
+                            if(levelsMap[prevPrevRowOffset + col - 2] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[prevPrevRowOffset + col - 2];
+                            }
+                            if(levelsMap[prevPrevRowOffset + col - 1] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[prevPrevRowOffset + col - 1];
+                            }
+                            if(levelsMap[prevPrevRowOffset + col] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[prevPrevRowOffset + col];
+                            }
+                            if(levelsMap[prevPrevRowOffset + col + 1] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[prevPrevRowOffset + col + 1];
+                            }
+
+                            if(levelsMap[prevRowOffset + col - 2] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[prevRowOffset + col - 2];
+                            }
+                            if(levelsMap[prevRowOffset + col - 1] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[prevRowOffset + col - 1];
+                            }
+                            if(levelsMap[prevRowOffset + col] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[prevRowOffset + col];
+                            }
+                            if(levelsMap[prevRowOffset + col + 1] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[prevRowOffset + col + 1];
+                            }
+
+                            if(levelsMap[rowOffset + col - 2] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[rowOffset + col - 2];
+                            }
+                            if(levelsMap[rowOffset + col - 1] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[rowOffset + col - 1];
+                            }
+
+                            if (sumKnown >= 5 && (float(sumLevels)/sumKnown) < float(adaStepThold))
+                            {
+                                levelsMap[rowOffset + col] = -1;
+                                continue;
+                            }
+                        }
+                        break;
+                }
+
+                double gypWeight = 0;
+                int reachedLevel = classifier->runAt(evaluator, Point(x, y), gypWeight);
+                levelsMap[rowOffset + col] = (signed char)reachedLevel;
+
+                if ( reachedLevel == 1 )
+                {
+                    reachedLevel = (int)classifier->data.stages.size();
+                }
+                else
+                {
+                    reachedLevel = -reachedLevel;
+                }
+
+                if ( rejectLevels )
+                {
+                    if ( classifier->data.stages.size() - reachedLevel < intervalLastStagesCount )
+                    {
+                        mtx->lock();
+                        rectangles->push_back(Rect(cvRound(x * scalingFactor),
+                                                   cvRound(y * scalingFactor),
+                                                   winSize.width, winSize.height));
+                        rejectLevels->push_back(reachedLevel);
+                        levelWeights->push_back(gypWeight);
+                        mtx->unlock();
+                    }
+                }
+                else if ( reachedLevel == (signed char)classifier->data.stages.size() )
+                {
+                    mtx->lock();
+                    rectangles->push_back(Rect(cvRound(x * scalingFactor),
+                                               cvRound(y * scalingFactor),
+                                               winSize.width, winSize.height));
+                    mtx->unlock();
+                }
+            }
+        }
+    }
+
+    CascadeClassifierImpl* classifier;
+    Mat* image;
+    std::vector<Rect>* rectangles;
+    Size processingRectSize;
+    int stripSize, yStep;
+    double scalingFactor;
+    std::vector<int> *rejectLevels;
+    std::vector<double> *levelWeights;
+    Mat mask;
+    Mutex* mtx;
+    unsigned int intervalLastStagesCount;
+    int adaStepThold;
+    int adaStepNeighborCount;
+};
+
+class CascadeClassifierInvoker2 : public ParallelLoopBody
+{
+public:
+    CascadeClassifierInvoker2( CascadeClassifierImpl& _cc, int _nscales, int _nstripes,
+                              const FeatureEvaluator::ScaleData* _scaleData,
+                              const int* _stripeSizes, std::vector<Rect>& _vec,
+                              std::vector<int>& _levels, std::vector<double>& _weights,
+                              bool outputLevels, const Mat& _mask, Mutex* _mtx,
+                              int _yStep = -1,
+                              int _intervalLastStagesCount = -1,
+                              int _adaStepThold = -1,
+                              int _adaStepNeighborCount = -1)
+    {
+        classifier = &_cc;
+        nscales = _nscales;
+        nstripes = _nstripes;
+        scaleData = _scaleData;
+        stripeSizes = _stripeSizes;
+        rectangles = &_vec;
+        rejectLevels = outputLevels ? &_levels : 0;
+        levelWeights = outputLevels ? &_weights : 0;
+        mask = _mask;
+        mtx = _mtx;
+        stepSize = _yStep;
+        intervalLastStagesCount = _intervalLastStagesCount;
+        adaStepThold = _adaStepThold;
+        adaStepNeighborCount = _adaStepNeighborCount;
+    }
+
+    void operator()(const Range& range) const CV_OVERRIDE
+    {
+        CV_INSTRUMENT_REGION();
+
+        Ptr<FeatureEvaluator> evaluator = classifier->featureEvaluator->clone();
+        double gypWeight = 0.;
+        Size origWinSize = classifier->data.origWinSize;
+
+        for( int scaleIdx = 0; scaleIdx < nscales; scaleIdx++ )
+        {
+            const FeatureEvaluator::ScaleData& s = scaleData[scaleIdx];
+            const float scalingFactor = s.scale;
+            const int yStep = stepSize == -1 ? s.ystep : stepSize;
+            const int stripeSize = stripeSizes[scaleIdx];
+            const int y1 = range.start*stripeSize;
+            const Size processingRectSize = s.getWorkingSize(origWinSize);
+            const int y2 = std::min(range.end * stripeSize, processingRectSize.height);
+            const Size winSize(cvRound(origWinSize.width * scalingFactor),
+                               cvRound(origWinSize.height * scalingFactor));
+            if (y1 >= y2)
+                return;
+
+            // FIXME: Mask should be scaled somehow
+            Mat currentMaskScaled;
+            if (!mask.empty())
+            {
+                // Size scaledImageSize(cvRound(mask.cols / scalingFactor), cvRound(mask.rows / scalingFactor));
+                Mat scaledImage(processingRectSize, CV_8UC1);
+                cv::resize( mask, currentMaskScaled, processingRectSize, 0, 0, INTER_LINEAR );
+            }
+
+            const int levelsMapRows = 1 + (y2 - y1 - 1) / yStep;
+            const int levelsMapCols = 1 + (processingRectSize.width - 1) / yStep;
+            Mat levelsMapMat(levelsMapRows, levelsMapCols, CV_8S, cv::Scalar(-1));
+            signed char* levelsMap = (signed char*)(levelsMapMat.data);
+
+            // std::cerr << " size " << origWinSize << " mask " << currentMaskScaled.size() << " scale  " << scalingFactor << " step " << yStep << " y1 " << y1 << " y2 " << y2 << std::endl;
+
+            for( int y = y1, row = 0; y < y2; y += yStep, row++ )
+            {
+                int rowOffset = levelsMapMat.step * row;
+                int prevRowOffset = levelsMapMat.step * (row-1);
+
+                for( int x = 0, col = 0; x < processingRectSize.width; x += yStep, col++ )
+                {
+                    if ( (!currentMaskScaled.empty()) && (currentMaskScaled.at<uchar>(Point(x, y)) == 0))
+                    {
+                        levelsMap[rowOffset + col] = -1;
+                        continue;
+                    }
+
+                    switch(adaStepNeighborCount)
+                    {
+                    case 1:
+                        if (col > 0)
+                        {
+                            int sumKnown = 0;
+                            int sumLevels = 0;
+
+                            if(levelsMap[rowOffset + col - 1] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[rowOffset + col - 1];
+                            }
+
+                            if (sumKnown > 0 && (float(sumLevels) < float(adaStepThold)))
+                            {
+                                levelsMap[rowOffset + col] = -1;
+                                continue;
+                            }
+                        }
+                        break;
+                    case 2:
+                        if (row > 0 && col > 0)
+                        {
+                            int sumKnown = 0;
+                            int sumLevels = 0;
+
+                            if(levelsMap[prevRowOffset + col] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[prevRowOffset + col];
+                            }
+                            if(levelsMap[rowOffset + col - 1] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[rowOffset + col - 1];
+                            }
+
+                            if (sumKnown >= 1 && (float(sumLevels)/sumKnown) < float(adaStepThold))
+                            {
+                                levelsMap[rowOffset + col] = -1;
+                                continue;
+                            }
+                        }
+                        break;
+                    case 4:
+                        if (row > 0 && col > 0 && col + 1 < levelsMapMat.cols)
+                        {
+                            int sumKnown = 0;
+                            int sumLevels = 0;
+
+                            if(levelsMap[prevRowOffset + col - 1] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[prevRowOffset + col - 1];
+                            }
+                            if(levelsMap[prevRowOffset + col] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[prevRowOffset + col];
+                            }
+                            if(levelsMap[prevRowOffset + col + 1] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[prevRowOffset + col + 1];
+                            }
+                            if(levelsMap[rowOffset + col - 1] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[rowOffset + col - 1];
+                            }
+
+                            if (sumKnown >= 2 && (float(sumLevels)/sumKnown) < float(adaStepThold))
+                            {
+                                levelsMap[rowOffset + col] = -1;
+                                continue;
+                            }
+                        }
+                        break;
+                    case 10:
+                        if (row > 1 && col > 1 && col + 1 < levelsMapMat.cols)
+                        {
+                            int sumKnown = 0;
+                            int sumLevels = 0;
+                            int prevPrevRowOffset = levelsMapMat.step * (row-2);
+
+                            if(levelsMap[prevPrevRowOffset + col - 2] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[prevPrevRowOffset + col - 2];
+                            }
+                            if(levelsMap[prevPrevRowOffset + col - 1] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[prevPrevRowOffset + col - 1];
+                            }
+                            if(levelsMap[prevPrevRowOffset + col] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[prevPrevRowOffset + col];
+                            }
+                            if(levelsMap[prevPrevRowOffset + col + 1] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[prevPrevRowOffset + col + 1];
+                            }
+
+                            if(levelsMap[prevRowOffset + col - 2] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[prevRowOffset + col - 2];
+                            }
+                            if(levelsMap[prevRowOffset + col - 1] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[prevRowOffset + col - 1];
+                            }
+                            if(levelsMap[prevRowOffset + col] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[prevRowOffset + col];
+                            }
+                            if(levelsMap[prevRowOffset + col + 1] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[prevRowOffset + col + 1];
+                            }
+
+                            if(levelsMap[rowOffset + col - 2] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[rowOffset + col - 2];
+                            }
+                            if(levelsMap[rowOffset + col - 1] > -1)
+                            {
+                                sumKnown++;
+                                sumLevels += levelsMap[rowOffset + col - 1];
+                            }
+
+                            if (sumKnown >= 5 && (float(sumLevels)/sumKnown) < float(adaStepThold))
+                            {
+                                levelsMap[rowOffset + col] = -1;
+                                continue;
+                            }
+                        }
+                        break;
+                    }
+
+                    gypWeight = 0;
+                    int reachedLevel = classifier->runAt(evaluator, Point(x, y), scaleIdx, gypWeight);
+                    levelsMap[rowOffset + col] = (signed char)reachedLevel;
+
+                    if ( reachedLevel == 1 )
+                    {
+                        reachedLevel = (int)classifier->data.stages.size();
+                    }
+                    else
+                    {
+                        reachedLevel = -reachedLevel;
+                    }
+
+                    if ( rejectLevels )
+                    {
+                        if ( (int) classifier->data.stages.size() - reachedLevel < intervalLastStagesCount )
+                        {
+                            mtx->lock();
+                            rectangles->push_back(Rect(cvRound(x * scalingFactor),
+                                                       cvRound(y * scalingFactor),
+                                                       winSize.width, winSize.height));
+                            rejectLevels->push_back(reachedLevel);
+                            levelWeights->push_back(gypWeight);
+                            mtx->unlock();
+                        }
+                    }
+                    else if ( reachedLevel == (signed char)classifier->data.stages.size() )
+                    {
+                        mtx->lock();
+                        rectangles->push_back(Rect(cvRound(x * scalingFactor),
+                                                   cvRound(y * scalingFactor),
+                                                   winSize.width, winSize.height));
+                        mtx->unlock();
+                    }
+                }
+            }
+        }
+    }
+
+    CascadeClassifierImpl* classifier;
+    std::vector<Rect>* rectangles;
+    int nscales, nstripes;
+    const FeatureEvaluator::ScaleData* scaleData;
+    const int* stripeSizes;
+    std::vector<int> *rejectLevels;
+    std::vector<double> *levelWeights;
+    std::vector<float> scales;
+    Mat mask;
+    Mutex* mtx;
+    int stepSize;
+    int intervalLastStagesCount;
+    int adaStepThold;
+    int adaStepNeighborCount;
+};
 
 #ifdef HAVE_OPENCL
 bool CascadeClassifierImpl::ocl_detectMultiScaleNoGrouping( const std::vector<float>& scales,
@@ -1078,7 +1622,7 @@ bool CascadeClassifierImpl::ocl_detectMultiScaleNoGrouping( const std::vector<fl
     std::vector<UMat> bufs;
     featureEvaluator->getUMats(bufs);
     Size localsz = featureEvaluator->getLocalSize();
-    if( localsz.empty() )
+    if ( localsz.empty() )
         return false;
     Size lbufSize = featureEvaluator->getLocalBufSize();
     size_t localsize[] = { (size_t)localsz.width, (size_t)localsz.height };
@@ -1090,7 +1634,7 @@ bool CascadeClassifierImpl::ocl_detectMultiScaleNoGrouping( const std::vector<fl
     UMat ufacepos_count(ufacepos, Rect(0, 0, 1, 1));
     ufacepos_count.setTo(Scalar::all(0));
 
-    if( ustages.empty() )
+    if ( ustages.empty() )
     {
         copyVectorToUMat(data.stages, ustages);
         if (!data.stumps.empty())
@@ -1098,20 +1642,20 @@ bool CascadeClassifierImpl::ocl_detectMultiScaleNoGrouping( const std::vector<fl
         else
             copyVectorToUMat(data.nodes, unodes);
         copyVectorToUMat(data.leaves, uleaves);
-        if( !data.subsets.empty() )
+        if ( !data.subsets.empty() )
             copyVectorToUMat(data.subsets, usubsets);
     }
 
     int nstages = (int)data.stages.size();
     int splitstage_ocl = 1;
 
-    if( featureType == FeatureEvaluator::HAAR )
+    if ( featureType == FeatureEvaluator::HAAR )
     {
         Ptr<HaarEvaluator> haar = featureEvaluator.dynamicCast<HaarEvaluator>();
-        if( haar.empty() )
+        if ( haar.empty() )
             return false;
 
-        if( haarKernel.empty() )
+        if ( haarKernel.empty() )
         {
             String opts;
             if ( !lbufSize.empty() )
@@ -1121,7 +1665,7 @@ bool CascadeClassifierImpl::ocl_detectMultiScaleNoGrouping( const std::vector<fl
                 opts = format("-D LOCAL_SIZE_X=%d -D LOCAL_SIZE_Y=%d -D NODE_COUNT=%d -D SPLIT_STAGE=%d -D N_STAGES=%d -D MAX_FACES=%d -D HAAR",
                               localsz.width, localsz.height, data.maxNodesPerTree, splitstage_ocl, nstages, MAX_FACES);
             haarKernel.create("runHaarClassifier", ocl::objdetect::cascadedetect_oclsrc, opts);
-            if( haarKernel.empty() )
+            if ( haarKernel.empty() )
                 return false;
         }
 
@@ -1142,16 +1686,16 @@ bool CascadeClassifierImpl::ocl_detectMultiScaleNoGrouping( const std::vector<fl
                         normrect, sqofs, data.origWinSize);
         ok = haarKernel.run(2, globalsize, localsize, true);
     }
-    else if( featureType == FeatureEvaluator::LBP )
+    else if ( featureType == FeatureEvaluator::LBP )
     {
         if (data.maxNodesPerTree > 1)
             return false;
 
         Ptr<LBPEvaluator> lbp = featureEvaluator.dynamicCast<LBPEvaluator>();
-        if( lbp.empty() )
+        if ( lbp.empty() )
             return false;
 
-        if( lbpKernel.empty() )
+        if ( lbpKernel.empty() )
         {
             String opts;
             if ( !lbufSize.empty() )
@@ -1161,7 +1705,7 @@ bool CascadeClassifierImpl::ocl_detectMultiScaleNoGrouping( const std::vector<fl
                 opts = format("-D LOCAL_SIZE_X=%d -D LOCAL_SIZE_Y=%d -D SPLIT_STAGE=%d -D N_STAGES=%d -D MAX_FACES=%d -D LBP",
                               localsz.width, localsz.height, splitstage_ocl, nstages, MAX_FACES);
             lbpKernel.create("runLBPClassifierStumpSimple", ocl::objdetect::cascadedetect_oclsrc, opts);
-            if( lbpKernel.empty() )
+            if ( lbpKernel.empty() )
                 return false;
         }
 
@@ -1183,7 +1727,7 @@ bool CascadeClassifierImpl::ocl_detectMultiScaleNoGrouping( const std::vector<fl
         ok = lbpKernel.run(2, globalsize, localsize, true);
     }
 
-    if( ok )
+    if ( ok )
     {
         Mat facepos = ufacepos.getMat(ACCESS_READ);
         const int* fptr = facepos.ptr<int>();
@@ -1226,18 +1770,22 @@ void* CascadeClassifierImpl::getOldCascade()
 void CascadeClassifierImpl::detectMultiScaleNoGrouping( InputArray _image, std::vector<Rect>& candidates,
                                                     std::vector<int>& rejectLevels, std::vector<double>& levelWeights,
                                                     double scaleFactor, Size minObjectSize, Size maxObjectSize,
-                                                    bool outputRejectLevels )
+                                                    int evalLastStagesCount,
+                                                    int stepSize,
+                                                    int adaStepThold,
+                                                    int adaStepNeighborCount )
 {
     CV_INSTRUMENT_REGION();
+    const bool outputRejectLevels = true;
 
     Size imgsz = _image.size();
     Size originalWindowSize = getOriginalWindowSize();
 
-    if( maxObjectSize.height == 0 || maxObjectSize.width == 0 )
+    if ( maxObjectSize.height == 0 || maxObjectSize.width == 0 )
         maxObjectSize = imgsz;
 
     // If a too small image patch is entering the function, break early before any processing
-    if( (imgsz.height < originalWindowSize.height) || (imgsz.width < originalWindowSize.width) )
+    if ( (imgsz.height < originalWindowSize.height) || (imgsz.width < originalWindowSize.width) )
         return;
 
     std::vector<float> all_scales, scales;
@@ -1249,7 +1797,7 @@ void CascadeClassifierImpl::detectMultiScaleNoGrouping( InputArray _image, std::
     for( double factor = 1; ; factor *= scaleFactor )
     {
         Size windowSize( cvRound(originalWindowSize.width*factor), cvRound(originalWindowSize.height*factor) );
-        if( windowSize.width > imgsz.width || windowSize.height > imgsz.height )
+        if ( windowSize.width > imgsz.width || windowSize.height > imgsz.height )
             break;
         all_scales.push_back((float)factor);
     }
@@ -1257,16 +1805,16 @@ void CascadeClassifierImpl::detectMultiScaleNoGrouping( InputArray _image, std::
     // This will capture allowed scales and a minSize==maxSize scale, if it is in the precalculated scales
     for( size_t index = 0; index < all_scales.size(); index++){
         Size windowSize( cvRound(originalWindowSize.width*all_scales[index]), cvRound(originalWindowSize.height*all_scales[index]) );
-        if( windowSize.width > maxObjectSize.width || windowSize.height > maxObjectSize.height)
+        if ( windowSize.width > maxObjectSize.width || windowSize.height > maxObjectSize.height)
             break;
-        if( windowSize.width < minObjectSize.width || windowSize.height < minObjectSize.height )
+        if ( windowSize.width < minObjectSize.width || windowSize.height < minObjectSize.height )
             continue;
         scales.push_back(all_scales[index]);
     }
 
     // If minSize and maxSize parameter are equal and scales is not filled yet, then the scale was not available in the precalculated scales
     // In that case we want to return the most fitting scale (closest corresponding scale using L2 distance)
-    if( scales.empty() && !all_scales.empty() ){
+    if ( scales.empty() && !all_scales.empty() ){
         std::vector<double> distances;
         // Calculate distances
         for(size_t v = 0; v < all_scales.size(); v++){
@@ -1310,7 +1858,132 @@ void CascadeClassifierImpl::detectMultiScaleNoGrouping( InputArray _image, std::
         _image.copyTo(grayImage);
     gray = grayImage;
 
-    if( !featureEvaluator->setImage(gray, scales) )
+    if ( !featureEvaluator->setImage(gray, scales) )
+        return;
+
+#ifdef HAVE_OPENCL
+    // OpenCL code
+    CV_OCL_RUN(use_ocl, ocl_detectMultiScaleNoGrouping( scales, candidates ))
+
+    if (use_ocl)
+        tryOpenCL = false;
+#endif
+
+    // CPU code
+    featureEvaluator->getMats();
+    {
+        Mat currentMask;
+        if (maskGenerator)
+            currentMask = maskGenerator->generateMask(gray.getMat());
+
+        size_t i, nscales = scales.size();
+        cv::AutoBuffer<int> stripeSizeBuf(nscales);
+        int* stripeSizes = stripeSizeBuf.data();
+        const FeatureEvaluator::ScaleData* s = &featureEvaluator->getScaleData(0);
+        Size szw = s->getWorkingSize(data.origWinSize);
+        int nstripes = cvCeil(szw.width/32.);
+        for( i = 0; i < nscales; i++ )
+        {
+            szw = s[i].getWorkingSize(data.origWinSize);
+            stripeSizes[i] = std::max((szw.height/s[i].ystep + nstripes-1)/nstripes, 1)*s[i].ystep;
+        }
+
+        CascadeClassifierInvoker2 invoker(*this, (int)nscales, nstripes, s, stripeSizes,
+                                         candidates, rejectLevels, levelWeights,
+                                         outputRejectLevels, currentMask, &mtx,
+                                         stepSize, evalLastStagesCount, adaStepThold, adaStepNeighborCount);
+        parallel_for_(Range(0, nstripes), invoker);
+    }
+}
+
+void CascadeClassifierImpl::detectMultiScaleNoGrouping( InputArray _image, std::vector<Rect>& candidates,
+                                                    std::vector<int>& rejectLevels, std::vector<double>& levelWeights,
+                                                    double scaleFactor, Size minObjectSize, Size maxObjectSize,
+                                                    bool outputRejectLevels )
+{
+    CV_INSTRUMENT_REGION();
+
+    Size imgsz = _image.size();
+    Size originalWindowSize = getOriginalWindowSize();
+
+    if ( maxObjectSize.height == 0 || maxObjectSize.width == 0 )
+        maxObjectSize = imgsz;
+
+    // If a too small image patch is entering the function, break early before any processing
+    if ( (imgsz.height < originalWindowSize.height) || (imgsz.width < originalWindowSize.width) )
+        return;
+
+    std::vector<float> all_scales, scales;
+    all_scales.reserve(1024);
+    scales.reserve(1024);
+
+    // First calculate all possible scales for the given image and model, then remove undesired scales
+    // This allows us to cope with single scale detections (minSize == maxSize) that do not fall on precalculated scale
+    for( double factor = 1; ; factor *= scaleFactor )
+    {
+        Size windowSize( cvRound(originalWindowSize.width*factor), cvRound(originalWindowSize.height*factor) );
+        if ( windowSize.width > imgsz.width || windowSize.height > imgsz.height )
+            break;
+        all_scales.push_back((float)factor);
+    }
+
+    // This will capture allowed scales and a minSize==maxSize scale, if it is in the precalculated scales
+    for( size_t index = 0; index < all_scales.size(); index++){
+        Size windowSize( cvRound(originalWindowSize.width*all_scales[index]), cvRound(originalWindowSize.height*all_scales[index]) );
+        if ( windowSize.width > maxObjectSize.width || windowSize.height > maxObjectSize.height)
+            break;
+        if ( windowSize.width < minObjectSize.width || windowSize.height < minObjectSize.height )
+            continue;
+        scales.push_back(all_scales[index]);
+    }
+
+    // If minSize and maxSize parameter are equal and scales is not filled yet, then the scale was not available in the precalculated scales
+    // In that case we want to return the most fitting scale (closest corresponding scale using L2 distance)
+    if ( scales.empty() && !all_scales.empty() ){
+        std::vector<double> distances;
+        // Calculate distances
+        for(size_t v = 0; v < all_scales.size(); v++){
+            Size windowSize( cvRound(originalWindowSize.width*all_scales[v]), cvRound(originalWindowSize.height*all_scales[v]) );
+            double d = (minObjectSize.width - windowSize.width) * (minObjectSize.width - windowSize.width)
+                       + (minObjectSize.height - windowSize.height) * (minObjectSize.height - windowSize.height);
+            distances.push_back(d);
+        }
+        // Take the index of lowest value
+        // Use that index to push the correct scale parameter
+        size_t iMin=0;
+        for(size_t i = 0; i < distances.size(); ++i){
+            if(distances[iMin] > distances[i])
+                    iMin=i;
+        }
+        scales.push_back(all_scales[iMin]);
+    }
+
+    candidates.clear();
+    rejectLevels.clear();
+    levelWeights.clear();
+
+#ifdef HAVE_OPENCL
+    bool use_ocl = tryOpenCL && ocl::isOpenCLActivated() &&
+         OCL_FORCE_CHECK(_image.isUMat()) &&
+         !featureEvaluator->getLocalSize().empty() &&
+         (data.minNodesPerTree == data.maxNodesPerTree) &&
+         !isOldFormatCascade() &&
+         maskGenerator.empty() &&
+         !outputRejectLevels;
+#endif
+
+    Mat grayImage;
+    _InputArray gray;
+
+    if (_image.channels() > 1)
+        cvtColor(_image, grayImage, COLOR_BGR2GRAY);
+    else if (_image.isMat())
+        grayImage = _image.getMat();
+    else
+        _image.copyTo(grayImage);
+    gray = grayImage;
+
+    if ( !featureEvaluator->setImage(gray, scales) )
         return;
 
 #ifdef HAVE_OPENCL
@@ -1359,13 +2032,13 @@ void CascadeClassifierImpl::detectMultiScale( InputArray _image, std::vector<Rec
 
     CV_Assert( scaleFactor > 1 && _image.depth() == CV_8U );
 
-    if( empty() )
+    if ( empty() )
         return;
 
     detectMultiScaleNoGrouping( _image, objects, rejectLevels, levelWeights, scaleFactor, minObjectSize, maxObjectSize,
                                 outputRejectLevels );
     const double GROUP_EPS = 0.2;
-    if( outputRejectLevels )
+    if ( outputRejectLevels )
     {
         groupRectangles( objects, rejectLevels, levelWeights, minNeighbors, GROUP_EPS );
     }
@@ -1397,7 +2070,7 @@ void CascadeClassifierImpl::detectMultiScale( InputArray _image, std::vector<Rec
     Mat image = _image.getMat();
     CV_Assert( scaleFactor > 1 && image.depth() == CV_8U );
 
-    if( empty() )
+    if ( empty() )
         return;
 
     std::vector<int> fakeLevels;
@@ -1408,6 +2081,173 @@ void CascadeClassifierImpl::detectMultiScale( InputArray _image, std::vector<Rec
     groupRectangles( objects, numDetections, minNeighbors, GROUP_EPS );
 }
 
+
+void CascadeClassifierImpl::detectMultiScale( const Mat &image,
+                                              std::vector<Rect>& objects,
+                                              std::vector<int>& rejectLevels,
+                                              std::vector<double>& levelWeights,
+                                              double scaleFactor,
+                                              int minNeighbors,
+                                              Size minObjectSize, Size maxObjectSize,
+                                              int evalLastStagesCount,
+                                              int stepSize,
+                                              int adaStepThold,
+                                              int adaStepNeighborCount )
+{
+    CV_INSTRUMENT_REGION();
+
+    const double GROUP_EPS = 0.2;
+
+    CV_Assert( scaleFactor > 1 &&
+               image.depth() == CV_8U &&
+               minObjectSize.width < maxObjectSize.width &&
+               minObjectSize.height < maxObjectSize.height);
+
+    if ( empty() )
+        return;
+    detectMultiScaleNoGrouping( image, objects, rejectLevels, levelWeights, scaleFactor, minObjectSize, maxObjectSize,
+                                evalLastStagesCount, stepSize, adaStepThold, adaStepNeighborCount );
+
+    groupRectangles( objects, rejectLevels, levelWeights, minNeighbors, GROUP_EPS );
+    return;
+    objects.clear();
+
+    if (!maskGenerator.empty()) {
+        maskGenerator->initializeMask(image);
+    }
+
+    if ( maxObjectSize.height == 0 || maxObjectSize.width == 0 )
+    {
+        maxObjectSize = image.size();
+    }
+
+    Mat grayImage = image;
+    if ( grayImage.channels() > 1 )
+    {
+        Mat temp;
+        cvtColor(grayImage, temp, COLOR_BGR2GRAY);
+        grayImage = temp;
+    }
+
+    double factor = 1.0;
+
+    Mat imageBuffer(image.rows + 1, image.cols + 1, CV_8U);
+    std::vector<Rect> candidates;
+
+    for(; ; factor *= scaleFactor )
+    {
+        Size originalWindowSize = getOriginalWindowSize();
+
+        Size windowSize( cvRound(originalWindowSize.width * factor),
+                         cvRound(originalWindowSize.height * factor) );
+        Size scaledImageSize( cvRound( grayImage.cols / factor ),
+                              cvRound( grayImage.rows / factor ) );
+        Size processingRectSize( scaledImageSize.width - originalWindowSize.width,
+                                 scaledImageSize.height - originalWindowSize.height );
+
+        if ( processingRectSize.width <= 0 || processingRectSize.height <= 0 )
+        {
+            break;
+        }
+        if ( windowSize.width > maxObjectSize.width || windowSize.height > maxObjectSize.height )
+        {
+            break;
+        }
+        if ( windowSize.width < minObjectSize.width || windowSize.height < minObjectSize.height )
+        {
+            continue;
+        }
+
+        Mat scaledImage( scaledImageSize, CV_8U, imageBuffer.data );
+        resize( grayImage, scaledImage, scaledImageSize, 0, 0, INTER_LINEAR );
+
+        int yStep;
+        if ( getFeatureType() == cv::FeatureEvaluator::HOG )
+        {
+            yStep = 4;
+        }
+        else
+        {
+            yStep = stepSize;
+        }
+
+        static const int PTS_PER_THREAD = 500;
+        int stripCount, stripSize;
+        stripCount = ((processingRectSize.width / yStep) * (processingRectSize.height + yStep - 1) / yStep + PTS_PER_THREAD / 2) / PTS_PER_THREAD;
+        stripCount = std::min(std::max(stripCount, 1), 200);
+        stripSize = (((processingRectSize.height + stripCount - 1) / stripCount + yStep - 1) / yStep) * yStep;
+
+        if ( !detectSingleScale( scaledImage, stripCount, processingRectSize,
+                                 stripSize, yStep, factor, candidates,
+                                 rejectLevels, levelWeights, true,
+                                 evalLastStagesCount, adaStepThold, adaStepNeighborCount) )
+        {
+            break;
+        }
+    }
+
+    objects.resize(candidates.size());
+    std::copy(candidates.begin(), candidates.end(), objects.begin());
+
+    groupRectangles( objects, rejectLevels, levelWeights, minNeighbors, GROUP_EPS );
+}
+
+bool CascadeClassifierImpl::detectSingleScale( const Mat& image, int stripCount, Size processingRectSize,
+                                           int stripSize, int yStep, double factor, std::vector<Rect>& candidates,
+                                           std::vector<int>& levels, std::vector<double>& weights,
+                                           bool outputRejectLevels, int intervalLastStagesCount,
+                                           int adaStepThold, int adaStepNeighborCount)
+{
+    if ( !featureEvaluator->setImage(image, {1 / factor } ) )
+    {
+        return false;
+    }
+
+    if (intervalLastStagesCount == -1)
+    {
+        intervalLastStagesCount = this->data.stages.size();
+    }
+
+    Mat currentMaskScaled;
+    if (!maskGenerator.empty())
+    {
+        Mat currentMask = maskGenerator->generateMask(image);
+        if (!currentMask.empty())
+        {
+            Size scaledImageSize( cvRound( currentMask.cols / factor ),
+                                  cvRound( currentMask.rows / factor ) );
+            Mat scaledImage( scaledImageSize, CV_8UC1);
+            cv::resize( currentMask, currentMaskScaled, scaledImageSize, 0, 0, INTER_LINEAR );
+        }
+    }
+
+    std::vector<Rect> candidatesVector;
+    std::vector<int> rejectLevels;
+    std::vector<double> levelWeights;
+
+    featureEvaluator->getMats();
+    if( outputRejectLevels )
+    {
+        parallel_for_(Range(0, stripCount),
+                      CascadeClassifierInnoInvoker( *this, processingRectSize, stripSize, yStep, factor,
+                                                    candidatesVector, rejectLevels, levelWeights, true,
+                                                    currentMaskScaled, &mtx,
+                                                    intervalLastStagesCount, adaStepThold, adaStepNeighborCount));
+        levels.insert( levels.end(), rejectLevels.begin(), rejectLevels.end() );
+        weights.insert( weights.end(), levelWeights.begin(), levelWeights.end() );
+    }
+    else
+    {
+         parallel_for_(Range(0, stripCount),
+                       CascadeClassifierInnoInvoker( *this, processingRectSize, stripSize, yStep, factor,
+                                                     candidatesVector, rejectLevels, levelWeights, false,
+                                                     currentMaskScaled, &mtx,
+                                                     1, adaStepThold, adaStepNeighborCount));
+    }
+    candidates.insert( candidates.end(), candidatesVector.begin(), candidatesVector.end() );
+
+    return true;
+}
 
 CascadeClassifierImpl::Data::Data()
 {
@@ -1420,17 +2260,17 @@ bool CascadeClassifierImpl::Data::read(const FileNode &root)
 
     // load stage params
     String stageTypeStr = (String)root[CC_STAGE_TYPE];
-    if( stageTypeStr == CC_BOOST )
+    if ( stageTypeStr == CC_BOOST )
         stageType = BOOST;
     else
         return false;
 
     String featureTypeStr = (String)root[CC_FEATURE_TYPE];
-    if( featureTypeStr == CC_HAAR )
+    if ( featureTypeStr == CC_HAAR )
         featureType = FeatureEvaluator::HAAR;
-    else if( featureTypeStr == CC_LBP )
+    else if ( featureTypeStr == CC_LBP )
         featureType = FeatureEvaluator::LBP;
-    else if( featureTypeStr == CC_HOG )
+    else if ( featureTypeStr == CC_HOG )
     {
         featureType = FeatureEvaluator::HOG;
         CV_Error(Error::StsNotImplemented, "HOG cascade is not supported in 3.0");
@@ -1444,7 +2284,7 @@ bool CascadeClassifierImpl::Data::read(const FileNode &root)
 
     // load feature params
     FileNode fn = root[CC_FEATURE_PARAMS];
-    if( fn.empty() )
+    if ( fn.empty() )
         return false;
 
     ncategories = fn[CC_MAX_CAT_COUNT];
@@ -1453,7 +2293,7 @@ bool CascadeClassifierImpl::Data::read(const FileNode &root)
 
     // load stages
     fn = root[CC_STAGES];
-    if( fn.empty() )
+    if ( fn.empty() )
         return false;
 
     stages.reserve(fn.size());
@@ -1484,7 +2324,7 @@ bool CascadeClassifierImpl::Data::read(const FileNode &root)
             FileNode fnw = *it1;
             FileNode internalNodes = fnw[CC_INTERNAL_NODES];
             FileNode leafValues = fnw[CC_LEAF_VALUES];
-            if( internalNodes.empty() || leafValues.empty() )
+            if ( internalNodes.empty() || leafValues.empty() )
                 return false;
 
             DTree tree;
@@ -1496,7 +2336,7 @@ bool CascadeClassifierImpl::Data::read(const FileNode &root)
 
             nodes.reserve(nodes.size() + tree.nodeCount);
             leaves.reserve(leaves.size() + leafValues.size());
-            if( subsetSize > 0 )
+            if ( subsetSize > 0 )
                 subsets.reserve(subsets.size() + tree.nodeCount*subsetSize);
 
             FileNodeIterator internalNodesIter = internalNodes.begin(), internalNodesEnd = internalNodes.end();
@@ -1507,7 +2347,7 @@ bool CascadeClassifierImpl::Data::read(const FileNode &root)
                 node.left = (int)*internalNodesIter; ++internalNodesIter;
                 node.right = (int)*internalNodesIter; ++internalNodesIter;
                 node.featureIdx = (int)*internalNodesIter; ++internalNodesIter;
-                if( subsetSize > 0 )
+                if ( subsetSize > 0 )
                 {
                     for( int j = 0; j < subsetSize; j++, ++internalNodesIter )
                         subsets.push_back((int)*internalNodesIter);
@@ -1527,7 +2367,7 @@ bool CascadeClassifierImpl::Data::read(const FileNode &root)
         }
     }
 
-    if( maxNodesPerTree == 1 )
+    if ( maxNodesPerTree == 1 )
     {
         int nodeOfs = 0, leafOfs = 0;
         size_t nstages = stages.size();
@@ -1559,13 +2399,13 @@ bool CascadeClassifierImpl::read_(const FileNode& root)
     ustages.release();
     unodes.release();
     uleaves.release();
-    if( !data.read(root) )
+    if ( !data.read(root) )
         return false;
 
     // load features
     featureEvaluator = FeatureEvaluator::create(data.featureType);
     FileNode fn = root[CC_FEATURES];
-    if( fn.empty() )
+    if ( fn.empty() )
         return false;
 
     return featureEvaluator->read(fn, data.origWinSize);
@@ -1602,7 +2442,7 @@ bool CascadeClassifier::read(const FileNode &root)
 {
     Ptr<CascadeClassifierImpl> ccimpl = makePtr<CascadeClassifierImpl>();
     bool ok = ccimpl->read_(root);
-    if( ok )
+    if ( ok )
         cc = ccimpl.staticCast<BaseCascadeClassifier>();
     else
         cc.release();
@@ -1626,10 +2466,10 @@ void clipObjects(Size sz, std::vector<Rect>& objects,
     for( i = 0; i < n; i++ )
     {
         Rect r = win0 & objects[i];
-        if( !r.empty() )
+        if ( !r.empty() )
         {
             objects[j] = r;
-            if( i > j )
+            if ( i > j )
             {
                 if(a) a->at(j) = a->at(i);
                 if(b) b->at(j) = b->at(i);
@@ -1638,7 +2478,7 @@ void clipObjects(Size sz, std::vector<Rect>& objects,
         }
     }
 
-    if( j < n )
+    if ( j < n )
     {
         objects.resize(j);
         if(a) a->resize(j);
@@ -1691,6 +2531,80 @@ void CascadeClassifier::detectMultiScale( InputArray image,
                          scaleFactor, minNeighbors, flags,
                          minSize, maxSize, outputRejectLevels);
     clipObjects(image.size(), objects, &rejectLevels, &levelWeights);
+}
+
+void CascadeClassifier::detectMultiScale( const Mat &image,
+                      CV_OUT std::vector<Rect>& objects,
+                      CV_OUT std::vector<int>& rejectLevels,
+                      CV_OUT std::vector<double>& levelWeights,
+                      double scaleFactor,
+                      int minNeighbors,
+                      Size minSize, Size maxSize,
+                      int evalLastStagesCount,
+                      int stepSize,
+                      int adaStepThold,
+                      int adaStepNeighborCount)
+{
+    CV_INSTRUMENT_REGION();
+
+    CV_Assert(!empty());
+    cc->detectMultiScale(image, objects, rejectLevels, levelWeights,
+                         scaleFactor, minNeighbors,
+                         minSize, maxSize,
+                         evalLastStagesCount,
+                         stepSize,
+                         adaStepThold,
+                         adaStepNeighborCount);
+    clipObjects(image.size(), objects, &rejectLevels, &levelWeights);
+}
+
+bool CascadeClassifier::detectSingleScale( const Mat& image,
+                                           int stripCount,
+                                           Size processingRectSize,
+                                           int stripSize,
+                                           int yStep,
+                                           double factor,
+                                           CV_OUT std::vector<Rect>& candidates,
+                                           CV_OUT std::vector<int>& levels,
+                                           CV_OUT std::vector<double>& weights,
+                                           bool outputRejectLevels,
+                                           int intervalLastStagesCount,
+                                           int adaStepThold,
+                                           int adaStepNeighborCount)
+{
+    CV_INSTRUMENT_REGION();
+
+    CV_Assert(!empty());
+    return cc->detectSingleScale(image, stripCount, processingRectSize, stripSize,
+                          yStep, factor,
+                          candidates, levels,
+                          weights,
+                          outputRejectLevels,
+                          intervalLastStagesCount,
+                          adaStepThold,
+                          adaStepNeighborCount);
+}
+
+bool CascadeClassifier::detectSingleScale( const Mat& image,
+                                           int stripCount,
+                                           Size processingRectSize,
+                                           int stripSize,
+                                           int yStep,
+                                           double factor,
+                                           CV_OUT std::vector<Rect>& candidates,
+                                           CV_OUT std::vector<int>& levels,
+                                           CV_OUT std::vector<double>& weights,
+                                           int adaStepThold,
+                                           int adaStepNeighborCount)
+{
+    return detectSingleScale(image, stripCount, processingRectSize, stripSize,
+                      yStep, factor,
+                      candidates, levels,
+                      weights,
+                      true,
+                      -1,
+                      adaStepThold,
+                      adaStepNeighborCount);
 }
 
 bool CascadeClassifier::isOldFormatCascade() const
