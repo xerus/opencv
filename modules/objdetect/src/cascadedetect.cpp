@@ -2199,7 +2199,7 @@ bool CascadeClassifierImpl::detectSingleScale( const Mat& image, int stripCount,
                                            bool outputRejectLevels, int intervalLastStagesCount,
                                            int adaStepThold, int adaStepNeighborCount)
 {
-    if ( !featureEvaluator->setImage(image, {1 / factor } ) )
+    if ( !featureEvaluator->setImage(image, { static_cast<float>(1.0 / factor) } ) )
     {
         return false;
     }
