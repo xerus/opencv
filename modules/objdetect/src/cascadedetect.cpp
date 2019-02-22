@@ -2105,11 +2105,11 @@ void CascadeClassifierImpl::detectMultiScale( const Mat &image,
 
     if ( empty() )
         return;
+// TODO refactor
+#if 1
     detectMultiScaleNoGrouping( image, objects, rejectLevels, levelWeights, scaleFactor, minObjectSize, maxObjectSize,
                                 evalLastStagesCount, stepSize, adaStepThold, adaStepNeighborCount );
-
-    groupRectangles( objects, rejectLevels, levelWeights, minNeighbors, GROUP_EPS );
-    return;
+#else
     objects.clear();
 
     if (!maskGenerator.empty()) {
@@ -2189,6 +2189,7 @@ void CascadeClassifierImpl::detectMultiScale( const Mat &image,
     objects.resize(candidates.size());
     std::copy(candidates.begin(), candidates.end(), objects.begin());
 
+#endif
     groupRectangles( objects, rejectLevels, levelWeights, minNeighbors, GROUP_EPS );
 }
 
