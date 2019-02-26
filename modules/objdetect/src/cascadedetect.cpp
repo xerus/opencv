@@ -1387,8 +1387,8 @@ public:
             if (!mask.empty())
             {
                 // Size scaledImageSize(cvRound(mask.cols / scalingFactor), cvRound(mask.rows / scalingFactor));
-                Mat scaledImage(processingRectSize, CV_8UC1);
-                cv::resize( mask, currentMaskScaled, processingRectSize, 0, 0, INTER_LINEAR );
+                Mat scaledImage(s.szi, CV_8UC1);
+                cv::resize( mask, currentMaskScaled, s.szi, 0, 0, INTER_LINEAR );
             }
 
             const int levelsMapRows = 1 + (y2 - y1 - 1) / yStep;
