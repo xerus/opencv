@@ -1360,6 +1360,11 @@ public:
         adaStepNeighborCount = _adaStepNeighborCount;
     }
 
+    void SetMasks(std::vector<cv::Mat> _masks)
+    {
+        masks = _masks;
+    }
+
     void operator()(const Range& range) const CV_OVERRIDE
     {
         CV_INSTRUMENT_REGION();
@@ -1382,13 +1387,10 @@ public:
             if (y1 >= y2)
                 return;
 
-            // FIXME: Mask should be scaled somehow
             Mat currentMaskScaled;
-            if (!mask.empty())
+            if (masks.size() > 0)
             {
-                // Size scaledImageSize(cvRound(mask.cols / scalingFactor), cvRound(mask.rows / scalingFactor));
-                Mat scaledImage(s.szi, CV_8UC1);
-                cv::resize( mask, currentMaskScaled, s.szi, 0, 0, INTER_LINEAR );
+                currentMaskScaled = masks[scaleIdx];
             }
 
             const int levelsMapRows = 1 + (y2 - y1 - 1) / yStep;
@@ -1482,7 +1484,6 @@ public:
                                 sumKnown++;
                                 sumLevels += levelsMap[rowOffset + col - 1];
                             }
-
                             if (sumKnown >= 2 && (float(sumLevels)/sumKnown) < float(adaStepThold))
                             {
                                 levelsMap[rowOffset + col] = -1;
@@ -1606,6 +1607,7 @@ public:
     std::vector<int> *rejectLevels;
     std::vector<double> *levelWeights;
     std::vector<float> scales;
+    std::vector<Mat> masks;
     Mat mask;
     Mutex* mtx;
     int stepSize;
@@ -1872,9 +1874,22 @@ void CascadeClassifierImpl::detectMultiScaleNoGrouping( InputArray _image, std::
     // CPU code
     featureEvaluator->getMats();
     {
-        Mat currentMask;
+        std::vector<Mat> currentMasks;
         if (maskGenerator)
-            currentMask = maskGenerator->generateMask(gray.getMat());
+        {
+            Mat currentMask = maskGenerator->generateMask(gray.getMat());
+
+            if (!currentMask.empty())
+            {
+                for(size_t scaleIndex = 0; scaleIndex < scales.size(); scaleIndex++)
+                {
+                    cv::Size dstSize = featureEvaluator->getScaleData(scaleIndex).szi;
+                    Mat scaledMask;
+                    cv::resize(currentMask, scaledMask, dstSize, INTER_NEAREST);
+                    currentMasks.push_back(scaledMask);
+                }
+            }
+        }
 
         size_t i, nscales = scales.size();
         cv::AutoBuffer<int> stripeSizeBuf(nscales);
@@ -1890,8 +1905,9 @@ void CascadeClassifierImpl::detectMultiScaleNoGrouping( InputArray _image, std::
 
         CascadeClassifierInvoker2 invoker(*this, (int)nscales, nstripes, s, stripeSizes,
                                          candidates, rejectLevels, levelWeights,
-                                         outputRejectLevels, currentMask, &mtx,
+                                         outputRejectLevels, Mat(), &mtx,
                                          stepSize, evalLastStagesCount, adaStepThold, adaStepNeighborCount);
+        invoker.SetMasks(currentMasks);
         parallel_for_(Range(0, nstripes), invoker);
     }
 }
