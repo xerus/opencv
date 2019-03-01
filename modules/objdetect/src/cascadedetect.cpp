@@ -1561,7 +1561,6 @@ public:
 
                     gypWeight = 0;
                     int reachedLevel = classifier->runAt(evaluator, Point(x, y), scaleIdx, gypWeight);
-                    levelsMap[rowOffset + col] = (signed char)reachedLevel;
 
                     if ( reachedLevel == 1 )
                     {
@@ -1571,6 +1570,7 @@ public:
                     {
                         reachedLevel = -reachedLevel;
                     }
+                    levelsMap[rowOffset + col] = (signed char)reachedLevel;
 
                     if ( rejectLevels )
                     {
