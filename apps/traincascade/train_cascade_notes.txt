@@ -1,0 +1,17 @@
+Our train cascade changes was not moved from old opencv version to new one.
+
+You can found diff between tags: opencv_2_4_last_commit ... opencv_2_4_initial_commit
+
+The main changes are in these commits:
+* 9108366e08e
+* 11b963a9d9a
+* 1f32a7e8231     (this commit would need changes in cascade - the just first detection has been removed)
+* a2f4af0b4fe
+
+* 277465ac2a6
+* d6bfc41c5f6
+* d675759fed9
+* c8c954b2824
+* b7a2880f152
+* 37de33428ee
+* 587db2e634e
