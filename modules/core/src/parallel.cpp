@@ -558,10 +558,31 @@ static void parallel_for_impl(const cv::Range& range, const cv::ParallelLoopBody
         pbody();
 
 #elif defined HAVE_OPENMP
+#if defined __ANDROID__
+        // this is temporary hack, because it seems that ```#pragma omp parallel for schedule(dynamic) num_threads(XXX)```
+        // does not work on android (due to old compiler???)
+        // please re-check it in future, when new android NDK will be used
+        // how to re-check?
+        //      * build speed_test (with flag -DIFACE_USE_PROFILING)
+        //      * deploy to device (armv7 or armv8)
+        //      * ./iface/apps/iface_demo_tools/iface_speed_test/iface_speed_test -d -i 2 -pG "global.thrd.num;2;global.thrd.management_mode;max_parallel"
+        //          should run 2x faster than (especially search for FaceFinderAdb::Solve)
+        //          ./iface/apps/iface_demo_tools/iface_speed_test/iface_speed_test -d -i 2
+        const int cur_num_threads = numThreads > 0 ? numThreads : numThreadsMax;
 
+        const int before_num_threads = omp_get_num_threads();
+        omp_set_num_threads(cur_num_threads);
+
+        #pragma omp parallel for schedule(dynamic)
+        for (int i = stripeRange.start; i < stripeRange.end; ++i)
+            pbody(Range(i, i + 1));
+
+        omp_set_num_threads(before_num_threads);
+#else
         #pragma omp parallel for schedule(dynamic) num_threads(numThreads > 0 ? numThreads : numThreadsMax)
         for (int i = stripeRange.start; i < stripeRange.end; ++i)
             pbody(Range(i, i + 1));
+#endif
 
 #elif defined HAVE_GCD
 
