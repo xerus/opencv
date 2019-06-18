@@ -737,6 +737,16 @@ CV__DNN_INLINE_NS_BEGIN
     CV_EXPORTS Net readNetFromCaffe(const char *bufferProto, size_t lenProto,
                                     const char *bufferModel = NULL, size_t lenModel = 0);
 
+    /** @brief Reads a network model stored in Caffe model in memory.
+      * @param bufferProto buffer containing the content of the .binaryproto file
+      * @param lenProto length of bufferProto
+      * @param bufferModel buffer containing the content of the .caffemodel file
+      * @param lenModel length of bufferModel
+      * @returns Net object.
+      */
+    CV_EXPORTS Net readNetFromCaffe(const unsigned char *bufferProto, size_t lenProto,
+                                    const unsigned char *bufferModel = NULL, size_t lenModel = 0);
+
     /** @brief Reads a network model stored in <a href="https://www.tensorflow.org/">TensorFlow</a> framework's format.
       * @param model  path to the .pb file with binary protobuf description of the network architecture
       * @param config path to the .pbtxt file that contains text graph definition in protobuf format.

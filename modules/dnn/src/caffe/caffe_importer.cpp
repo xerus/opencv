@@ -103,6 +103,17 @@ public:
             ReadNetParamsFromBinaryBufferOrDie(dataModel, lenModel, &netBinary);
     }
 
+    CaffeImporter(const unsigned char *dataProto, size_t lenProto,
+                  const unsigned char *dataModel, size_t lenModel)
+    {
+        CV_TRACE_FUNCTION();
+
+        ReadNetParamsFromBinaryBufferOrDie(reinterpret_cast<const char *>(dataProto), lenProto, &net);
+
+        if (dataModel != NULL && lenModel > 0)
+            ReadNetParamsFromBinaryBufferOrDie(reinterpret_cast<const char *>(dataModel), lenModel, &netBinary);
+    }
+
     void extractCustomParams(const google::protobuf::UnknownFieldSet& unknownFields, cv::dnn::LayerParams &params)
     {
         const int numFields = unknownFields.field_count();
@@ -482,6 +493,15 @@ Net readNetFromCaffe(const String &prototxt, const String &caffeModel /*= String
 
 Net readNetFromCaffe(const char *bufferProto, size_t lenProto,
                      const char *bufferModel, size_t lenModel)
+{
+    CaffeImporter caffeImporter(bufferProto, lenProto, bufferModel, lenModel);
+    Net net;
+    caffeImporter.populateNet(net);
+    return net;
+}
+
+Net readNetFromCaffe(const unsigned char *bufferProto, size_t lenProto,
+                     const unsigned char *bufferModel, size_t lenModel)
 {
     CaffeImporter caffeImporter(bufferProto, lenProto, bufferModel, lenModel);
     Net net;
