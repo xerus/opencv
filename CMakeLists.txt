@@ -114,6 +114,10 @@ if(POLICY CMP0068)
   cmake_policy(SET CMP0068 NEW)  # CMake 3.9+: `RPATH` settings on macOS do not affect `install_name`.
 endif()
 
+if(POLICY CMP0074)
+  cmake_policy(SET CMP0074 NEW) # Use PackageName_ROOT to find PackageName's cmake config
+endif()
+
 include(cmake/OpenCVUtils.cmake)
 ocv_cmake_reset_hooks()
 ocv_check_environment_variables(OPENCV_CMAKE_HOOKS_DIR)
