@@ -10,6 +10,7 @@
 #include <opencv2/dnn/shape_utils.hpp>
 
 #ifdef HAVE_INF_ENGINE
+#include <ext_list.hpp> // for static linking
 #include <ie_extension.h>
 #include <ie_plugin_dispatcher.hpp>
 #endif  // HAVE_INF_ENGINE
@@ -388,6 +389,19 @@ static bool detectMyriadX_()
 }
 #endif  // !defined(OPENCV_DNN_IE_VPU_TYPE_DEFAULT)
 
+// based on https://github.com/opencv/dldt/issues/92
+static InferenceEngine::InferenceEnginePluginPtr StaticLinkedCpuPlugin()
+{
+    InferenceEngine::IInferencePlugin* impl = nullptr;
+    InferenceEngine::ResponseDesc desc;
+    const InferenceEngine::StatusCode code = InferenceEngine::CreatePluginEngine(impl, &desc);
+    if (code != InferenceEngine::StatusCode::OK)
+    {
+        THROW_IE_EXCEPTION << desc.msg;
+    }
+    return InferenceEngine::InferenceEnginePluginPtr(impl);
+}
+
 void InfEngineBackendNet::initPlugin(InferenceEngine::ICNNNetwork& net)
 {
     CV_Assert(!isInitialized());
@@ -403,60 +417,69 @@ void InfEngineBackendNet::initPlugin(InferenceEngine::ICNNNetwork& net)
         }
         else
         {
+            bool extensionAdded = false;
             auto dispatcher = InferenceEngine::PluginDispatcher({""});
             if (targetDevice == InferenceEngine::TargetDevice::eFPGA)
+            {
                 enginePtr = dispatcher.getPluginByDevice("HETERO:FPGA,CPU");
+            }
+            else if (targetDevice == InferenceEngine::TargetDevice::eCPU)
+            {
+                enginePtr = StaticLinkedCpuPlugin();
+                enginePtr->AddExtension(std::make_shared<InferenceEngine::Extensions::Cpu::CpuExtensions>(), 0);
+                extensionAdded = true;
+            }
             else
+            {
                 enginePtr = dispatcher.getSuitablePlugin(targetDevice);
+            }
             sharedPlugins[targetDevice] = enginePtr;
 
             std::vector<std::string> candidates;
-
             std::string param_pluginPath = utils::getConfigurationParameterString("OPENCV_DNN_IE_EXTRA_PLUGIN_PATH", "");
-            if (!param_pluginPath.empty())
+            if (!extensionAdded || !param_pluginPath.empty())
             {
                 candidates.push_back(param_pluginPath);
-            }
 
-            if (targetDevice == InferenceEngine::TargetDevice::eCPU ||
-                targetDevice == InferenceEngine::TargetDevice::eFPGA)
-            {
-                std::string suffixes[] = {"_avx2", "_sse4", ""};
-                bool haveFeature[] = {
-                    checkHardwareSupport(CPU_AVX2),
-                    checkHardwareSupport(CPU_SSE4_2),
-                    true
-                };
-                for (int i = 0; i < 3; ++i)
+                if (targetDevice == InferenceEngine::TargetDevice::eCPU ||
+                    targetDevice == InferenceEngine::TargetDevice::eFPGA)
                 {
-                    if (!haveFeature[i])
-                        continue;
-#ifdef _WIN32
-                    candidates.push_back("cpu_extension" + suffixes[i] + ".dll");
-#elif defined(__APPLE__)
-                    candidates.push_back("libcpu_extension" + suffixes[i] + ".so");  // built as loadable module
-                    candidates.push_back("libcpu_extension" + suffixes[i] + ".dylib");  // built as shared library
-#else
-                    candidates.push_back("libcpu_extension" + suffixes[i] + ".so");
-#endif  // _WIN32
+                    std::string suffixes[] = {"_avx2", "_sse4", ""};
+                    bool haveFeature[] = {
+                        checkHardwareSupport(CPU_AVX2),
+                        checkHardwareSupport(CPU_SSE4_2),
+                        true
+                    };
+                    for (int i = 0; i < 3; ++i)
+                    {
+                        if (!haveFeature[i])
+                            continue;
+    #ifdef _WIN32
+                        candidates.push_back("cpu_extension" + suffixes[i] + ".dll");
+    #elif defined(__APPLE__)
+                        candidates.push_back("libcpu_extension" + suffixes[i] + ".so");  // built as loadable module
+                        candidates.push_back("libcpu_extension" + suffixes[i] + ".dylib");  // built as shared library
+    #else
+                        candidates.push_back("libcpu_extension" + suffixes[i] + ".so");
+    #endif  // _WIN32
+                    }
+                }
+                for (size_t i = 0; i != candidates.size(); ++i)
+                {
+                    const std::string& libName = candidates[i];
+                    try
+                    {
+                        InferenceEngine::IExtensionPtr extension =
+                            InferenceEngine::make_so_pointer<InferenceEngine::IExtension>(libName);
+                        enginePtr->AddExtension(extension, 0);
+                        CV_LOG_INFO(NULL, "DNN-IE: Loaded extension plugin: " << libName);
+                        extensionAdded = true;
+                        break;
+                    }
+                    catch(...) {}
                 }
             }
-            bool found = false;
-            for (size_t i = 0; i != candidates.size(); ++i)
-            {
-                const std::string& libName = candidates[i];
-                try
-                {
-                    InferenceEngine::IExtensionPtr extension =
-                        InferenceEngine::make_so_pointer<InferenceEngine::IExtension>(libName);
-                    enginePtr->AddExtension(extension, 0);
-                    CV_LOG_INFO(NULL, "DNN-IE: Loaded extension plugin: " << libName);
-                    found = true;
-                    break;
-                }
-                catch(...) {}
-            }
-            if (!found && !candidates.empty())
+            if (!extensionAdded && !candidates.empty())
             {
                 CV_LOG_WARNING(NULL, "DNN-IE: Can't load extension plugin (extra layers for some networks). Specify path via OPENCV_DNN_IE_EXTRA_PLUGIN_PATH parameter");
             }
