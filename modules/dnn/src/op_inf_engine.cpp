@@ -141,14 +141,20 @@ void InfEngineBackendNet::init(int targetId)
     {
         const std::string& name = it.first;
         auto blobIt = allBlobs.find(name);
-        CV_Assert(blobIt != allBlobs.end());
+        if (blobIt == allBlobs.end())
+        {
+            continue;
+        }
         it.second->setPrecision(blobIt->second->precision());
     }
     for (const auto& it : cnn.getOutputsInfo())
     {
         const std::string& name = it.first;
         auto blobIt = allBlobs.find(name);
-        CV_Assert(blobIt != allBlobs.end());
+        if (blobIt == allBlobs.end())
+        {
+            continue;
+        }
         it.second->setPrecision(blobIt->second->precision());  // Should be always FP32
     }
 
@@ -561,14 +567,20 @@ void InfEngineBackendNet::forward(const std::vector<Ptr<BackendWrapper> >& outBl
         {
             const std::string& name = it.first;
             auto blobIt = allBlobs.find(name);
-            CV_Assert(blobIt != allBlobs.end());
+            if (blobIt == allBlobs.end())
+            {
+                continue;
+            }
             inpBlobs[name] = isAsync ? cloneBlob(blobIt->second) : blobIt->second;
         }
         for (const auto& it : cnn.getOutputsInfo())
         {
             const std::string& name = it.first;
             auto blobIt = allBlobs.find(name);
-            CV_Assert(blobIt != allBlobs.end());
+            if (blobIt == allBlobs.end())
+            {
+                continue;
+            }
             outBlobs[name] = isAsync ? cloneBlob(blobIt->second) : blobIt->second;
         }
         reqWrapper->req.SetInput(inpBlobs);
