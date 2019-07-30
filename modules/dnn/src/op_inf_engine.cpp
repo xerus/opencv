@@ -492,9 +492,26 @@ void InfEngineBackendNet::initPlugin(InferenceEngine::ICNNNetwork& net)
             // Some of networks can work without a library of extra layers.
 #ifndef _WIN32
             // Limit the number of CPU threads.
-            enginePtr->SetConfig({{
-                InferenceEngine::PluginConfigParams::KEY_CPU_THREADS_NUM, format("%d", getNumThreads()),
-            }}, 0);
+            enginePtr->SetConfig({
+                {
+                    InferenceEngine::PluginConfigParams::KEY_CPU_THREADS_NUM,
+                    format("%d", getNumThreads())
+                },
+                // make sure to run in 1 thread in a fork
+                {
+                    InferenceEngine::PluginConfigParams::KEY_CPU_THROUGHPUT_STREAMS,
+                    format("%d", 1)
+                },
+                // otherwise it checks for threads in all the fork()s
+                {
+                    InferenceEngine::PluginConfigParams::KEY_CPU_BIND_THREAD,
+                    InferenceEngine::PluginConfigParams::NO
+                },
+                {
+                    InferenceEngine::PluginConfigParams::KEY_EXCLUSIVE_ASYNC_REQUESTS,
+                    InferenceEngine::PluginConfigParams::YES
+                },
+            }, 0);
 #endif
         }
         plugin = InferenceEngine::InferencePlugin(enginePtr);
