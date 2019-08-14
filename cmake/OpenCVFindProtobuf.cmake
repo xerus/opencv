@@ -43,14 +43,14 @@ else()
   # end of compatibility block
 
   if(Protobuf_FOUND)
-    if(TARGET protobuf::libprotobuf)
-      add_library(libprotobuf INTERFACE IMPORTED)
-      set_target_properties(libprotobuf PROPERTIES
-        INTERFACE_LINK_LIBRARIES protobuf::libprotobuf
+    if(TARGET protobuf::protobuf)
+      add_library(protobuf INTERFACE IMPORTED)
+      set_target_properties(protobuf PROPERTIES
+        INTERFACE_LINK_LIBRARIES protobuf::protobuf
       )
     else()
-      add_library(libprotobuf UNKNOWN IMPORTED)
-      set_target_properties(libprotobuf PROPERTIES
+      add_library(protobuf UNKNOWN IMPORTED)
+      set_target_properties(protobuf PROPERTIES
         IMPORTED_LOCATION "${Protobuf_LIBRARY}"
         INTERFACE_INCLUDE_DIRECTORIES "${Protobuf_INCLUDE_DIR}"
         INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${Protobuf_INCLUDE_DIR}"
